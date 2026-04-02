@@ -15,7 +15,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pill.active-ing{background:#EEEDFE;border-color:#534AB7;color:#3C3489}
 .pill.active-form{background:#E1F5EE;border-color:#0F6E56;color:#085041}
 .pill.disabled{opacity:.35;cursor:default;pointer-events:none}
-.pill .aka{font-size:11px;color:#999;display:block;margin-top:1px}
+.pill .sub{font-size:11px;color:#999;display:block;margin-top:1px}
 .result-card{padding:10px 14px;border-radius:8px;border:1px solid #e0e0e0;font-size:13px;background:#f9f9f9}
 .result-label{font-size:11px;color:#999;margin-bottom:3px;font-weight:500}
 .result-val{color:#1a1a1a;line-height:1.5}
@@ -43,9 +43,11 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 @media(prefers-color-scheme:dark){
 .pill{background:#2a2a2a;color:#e5e5e5;border-color:#444}
 .pill:hover{border-color:#666}
-.pill .aka{color:#888}
+.pill .sub{color:#888}
 .pill.active-ing{background:#3C3489;border-color:#AFA9EC;color:#CECBF6}
+.pill.active-ing .sub{color:#AFA9EC}
 .pill.active-form{background:#085041;border-color:#5DCAA5;color:#9FE1CB}
+.pill.active-form .sub{color:#5DCAA5}
 .result-card{background:#2a2a2a;border-color:#444}
 .result-val{color:#e5e5e5}
 .conc-row input{background:#333;color:#e5e5e5;border-color:#555}
@@ -83,42 +85,48 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 <script>
 var FM={
   suspension:{type:'liquid',unit:'mL',ul:'mL',exMg:'120',exVol:'5'},
+  syrup:{type:'liquid',unit:'mL',ul:'mL',exMg:'120',exVol:'5'},
+  solution:{type:'liquid',unit:'mL',ul:'mL',exMg:'500',exVol:'1'},
   drops:{type:'liquid',unit:'mL',ul:'mL',exMg:'100',exVol:'1'},
   chewable:{type:'solid',unit:'tablets',ul:'tablet',exMg:'160'},
   dissolve_pack:{type:'solid',unit:'packs',ul:'pack',exMg:'160'},
   dispersible:{type:'solid',unit:'tablets',ul:'tablet',exMg:'125'},
   melt:{type:'solid',unit:'tablets',ul:'tablet',exMg:'250'},
   powder:{type:'solid',unit:'sachets',ul:'sachet',exMg:'160'},
+  granules:{type:'solid',unit:'sachets',ul:'sachet',exMg:'160'},
+  sachet:{type:'solid',unit:'sachets',ul:'sachet',exMg:'160'},
   effervescent:{type:'solid',unit:'tablets',ul:'tablet',exMg:'250'},
   suppository:{type:'solid',unit:'units',ul:'unit',exMg:'125'},
   tablet:{type:'solid',unit:'tablets',ul:'tablet',exMg:'500'},
-  solution:{type:'liquid',unit:'mL',ul:'mL',exMg:'500',exVol:'1'},
   other:{type:'other',unit:'free text',ul:null,exMg:null}
 };
 
 var R={
 global:{
   ingredients:[
-    {id:'para',label:'Paracetamol',aka:'Same as acetaminophen',sub:'Calpol, Crocin, Dolo, Panadol, Calonal',where:'Europe, Asia, Africa, Latin America, Australia'},
-    {id:'aceta',label:'Acetaminophen',aka:'Same as paracetamol',sub:'Tylenol, FeverAll',where:'US, Canada, Japan',maps:'para'},
+    {id:'para',label:'Paracetamol',sub:'Calpol, Crocin, Dolo, Panadol, Calonal',where:'Europe, Asia, Africa, Latin America, Australia'},
+    {id:'aceta',label:'Acetaminophen',sub:'Tylenol, FeverAll',where:'US, Canada, Japan',maps:'para'},
     {id:'ibu',label:'Ibuprofen',sub:'Motrin, Advil, Nurofen, Brufen, Calprofen',where:'Worldwide'},
-    {id:'dipy',label:'Dipyrone',aka:'Same as metamizol',sub:'Novalgina, Anador',where:'Brazil, Latin America, Israel',maps:'dipy'},
-    {id:'meta',label:'Metamizol',aka:'Same as dipyrone',sub:'Novalgin, Analgin',where:'Germany, Italy, Russia, parts of Asia',maps:'dipy'},
+    {id:'dipy',label:'Dipyrone',sub:'Novalgina, Anador',where:'Brazil, Latin America, Israel'},
+    {id:'meta',label:'Metamizol',sub:'Novalgin, Analgin',where:'Germany, Italy, Russia, parts of Asia',maps:'dipy'},
     {id:'mef',label:'Mefenamic acid',sub:'Meftal-P, Ponstan',where:'India, SE Asia, Middle East, parts of Africa'},
     {id:'diclo',label:'Diclofenac',sub:'Voltaren, Cataflam',where:'Parts of Europe, Middle East, Africa, Asia (prescribed)'},
     {id:'other',label:'Other (free text)',sub:null,where:null}
   ],
   forms:[
-    {id:'suspension',label:'Oral suspension / syrup',w:'Worldwide — most common pediatric form'},
-    {id:'drops',label:'Drops',w:'Worldwide for infants — higher concentration, smaller volume'},
-    {id:'chewable',label:'Chewable tablet',w:'US, UK, parts of Europe and Asia'},
-    {id:'dispersible',label:'Dispersible tablet',w:'India, Africa, developing countries — WHO recommended'},
-    {id:'melt',label:'Melt-in-mouth tablet',w:'UK (Calpol Fastmelts), Japan, parts of Europe'},
-    {id:'powder',label:'Powder / granules / sachet',w:'Japan, US (Tylenol Dissolve Packs), Germany, Europe, Asia'},
-    {id:'effervescent',label:'Effervescent tablet',w:'Europe (Germany, France), parts of Middle East — older children'},
-    {id:'suppository',label:'Suppository',w:'Worldwide — esp. Europe, Japan, Latin America'},
-    {id:'tablet',label:'Tablet',w:'Older children — worldwide'},
-    {id:'other',label:'Other (free text)',w:null}
+    {id:'suspension',label:'Oral suspension',sub:'Tylenol, Motrin, Calpol, Nurofen',w:'Worldwide — most common pediatric form'},
+    {id:'syrup',label:'Syrup',sub:'Crocin, Brufen, Novalgina, Meftal-P',w:'India, Japan, Latin America, parts of Europe',maps:'suspension'},
+    {id:'drops',label:'Drops',sub:'Motrin Infant, Advil Infant, Crocin, Novalgina Gotas',w:'Worldwide for infants — higher concentration, smaller volume'},
+    {id:'chewable',label:'Chewable tablet',sub:'Tylenol Chewables, Motrin Chewables, Nurofen',w:'US, UK, parts of Europe and Asia'},
+    {id:'dispersible',label:'Dispersible tablet',sub:'Dolo DT, Crocin DT, Calpol Tablets',w:'India, Africa, developing countries — WHO recommended'},
+    {id:'melt',label:'Melt-in-mouth tablet',sub:'Calpol Fastmelts',w:'UK, Japan, parts of Europe'},
+    {id:'powder',label:'Powder',sub:'Muhi Kodomo (Japan)',w:'Europe, parts of Asia'},
+    {id:'granules',label:'Granules',sub:'Kids Bufferin (Japan), Pabron Kids',w:'Japan, Germany',maps:'powder'},
+    {id:'sachet',label:'Sachet',sub:'Tylenol Dissolve Packs',w:'US, Europe, Asia',maps:'powder'},
+    {id:'effervescent',label:'Effervescent tablet',sub:'Panadol Soluble, Calpol SixPlus',w:'Europe (Germany, France), parts of Middle East — older children'},
+    {id:'suppository',label:'Suppository',sub:'FeverAll, Pabron Kids, Alvedon',w:'Worldwide — esp. Europe, Japan, Latin America'},
+    {id:'tablet',label:'Tablet',sub:'Generic — older children',w:'Older children — worldwide'},
+    {id:'other',label:'Other (free text)',sub:null,w:null}
   ],
   avail:{
     para:{suspension:1,drops:1,chewable:1,dispersible:1,melt:1,powder:1,effervescent:1,suppository:1,tablet:1,other:1},
@@ -143,12 +151,12 @@ us:{
     {id:'other',label:'Other (free text)',sub:null}
   ],
   forms:[
-    {id:'suspension',label:'Oral suspension'},
-    {id:'drops',label:'Drops'},
-    {id:'chewable',label:'Chewable tablet'},
-    {id:'dissolve_pack',label:'Dissolve pack'},
-    {id:'suppository',label:'Suppository'},
-    {id:'other',label:'Other (free text)'}
+    {id:'suspension',label:'Oral suspension',sub:'Tylenol, Motrin, Advil'},
+    {id:'drops',label:'Drops',sub:'Motrin Infant Drops, Advil Infant Drops'},
+    {id:'chewable',label:'Chewable tablet',sub:'Tylenol Chewables, Motrin Chewables'},
+    {id:'dissolve_pack',label:'Dissolve pack',sub:'Tylenol Dissolve Packs'},
+    {id:'suppository',label:'Suppository',sub:'FeverAll'},
+    {id:'other',label:'Other (free text)',sub:null}
   ],
   avail:{
     aceta:{suspension:1,drops:1,chewable:1,dissolve_pack:1,suppository:1,other:1},
@@ -166,12 +174,13 @@ india:{
     {id:'other',label:'Other (free text)',sub:null}
   ],
   forms:[
-    {id:'suspension',label:'Oral suspension / syrup'},
-    {id:'drops',label:'Drops'},
-    {id:'dispersible',label:'Dispersible tablet'},
-    {id:'tablet',label:'Tablet'},
-    {id:'suppository',label:'Suppository'},
-    {id:'other',label:'Other (free text)'}
+    {id:'suspension',label:'Oral suspension',sub:'Calpol Suspension, Nurofen'},
+    {id:'syrup',label:'Syrup',sub:'Crocin Syrup, Brufen Syrup, Meftal-P',maps:'suspension'},
+    {id:'drops',label:'Drops',sub:'Crocin Drops, Ibugesic Drops'},
+    {id:'dispersible',label:'Dispersible tablet',sub:'Dolo DT, Crocin DT'},
+    {id:'tablet',label:'Tablet',sub:'Dolo 650, Crocin 500'},
+    {id:'suppository',label:'Suppository',sub:'Calpol Suppository'},
+    {id:'other',label:'Other (free text)',sub:null}
   ],
   avail:{
     para:{suspension:1,drops:1,dispersible:1,tablet:1,suppository:1,other:1},
@@ -187,18 +196,19 @@ india:{
 },
 latam:{
   ingredients:[
-    {id:'dipy',label:'Dipyrone',aka:'Also known as metamizol',sub:'Novalgina, Anador'},
-    {id:'meta',label:'Metamizol',aka:'Also known as dipyrone',sub:'Novalgin',maps:'dipy'},
+    {id:'dipy',label:'Dipyrone',sub:'Novalgina, Anador'},
+    {id:'meta',label:'Metamizol',sub:'Novalgin',maps:'dipy'},
     {id:'para',label:'Paracetamol',sub:'Tylenol, Panadol'},
     {id:'ibu',label:'Ibuprofen',sub:'Advil, Alivium'},
     {id:'other',label:'Other (free text)',sub:null}
   ],
   forms:[
-    {id:'solution',label:'Oral solution / syrup'},
-    {id:'drops',label:'Drops (gotas)'},
-    {id:'tablet',label:'Tablet (comprimido)'},
-    {id:'suppository',label:'Suppository (supositorio)'},
-    {id:'other',label:'Other (free text)'}
+    {id:'solution',label:'Oral solution',sub:'Novalgina Solução'},
+    {id:'syrup',label:'Syrup',sub:'Tylenol Jarabe, Alivium Xarope',maps:'solution'},
+    {id:'drops',label:'Drops (gotas)',sub:'Novalgina Gotas, Tylenol Gotas, Alivium Gotas'},
+    {id:'tablet',label:'Tablet (comprimido)',sub:'Novalgina, Tylenol, Advil'},
+    {id:'suppository',label:'Suppository (supositorio)',sub:'Novalgina Supositório'},
+    {id:'other',label:'Other (free text)',sub:null}
   ],
   avail:{
     dipy:{solution:1,drops:1,tablet:1,suppository:1,other:1},
@@ -212,52 +222,52 @@ latam:{
 };
 
 var cur='us',selIng=null,selForm=null;
-
-function resolve(reg,id){
-  var ing=reg.ingredients.find(function(i){return i.id===id;});
-  if(ing&&ing.maps)return ing.maps;
-  return id;
-}
+function resolveIng(reg,id){var i=reg.ingredients.find(function(x){return x.id===id;});return(i&&i.maps)?i.maps:id;}
+function resolveForm(reg,id){var f=reg.forms.find(function(x){return x.id===id;});return(f&&f.maps)?f.maps:id;}
 
 function pickRegion(r){cur=r;selIng=null;selForm=null;
   document.querySelectorAll('.region-tab').forEach(function(t){t.classList.toggle('active',t.dataset.region===r);});
-  build();render();
-}
+  build();render();}
 
 function build(){
   var reg=R[cur];
   var h='<div class="col-label">Ingredient</div>';
   reg.ingredients.forEach(function(i){
     h+='<div class="pill" data-ing="'+i.id+'" onclick="pickIng(\''+i.id+'\')">'+i.label;
-    if(i.aka)h+='<span class="aka">'+i.aka+'</span>';
-    else if(i.sub)h+='<span class="aka">'+i.sub+'</span>';
+    if(i.sub)h+='<span class="sub">'+i.sub+'</span>';
     h+='</div>';
   });
   document.getElementById('col-ing').innerHTML=h;
   var fh='<div class="col-label">Form</div>';
-  reg.forms.forEach(function(f){fh+='<div class="pill" data-form="'+f.id+'" onclick="pickForm(\''+f.id+'\')">'+f.label+'</div>';});
+  reg.forms.forEach(function(f){
+    fh+='<div class="pill" data-form="'+f.id+'" onclick="pickForm(\''+f.id+'\')">'+f.label;
+    if(f.sub)fh+='<span class="sub">'+f.sub+'</span>';
+    fh+='</div>';
+  });
   document.getElementById('col-form').innerHTML=fh;
 }
 
 function pickIng(v){selIng=selIng===v?null:v;if(!selIng)selForm=null;
-  var reg=R[cur];var rid=resolve(reg,selIng);
-  if(selIng&&selForm&&(!reg.avail[rid]||!reg.avail[rid][selForm]))selForm=null;
-  render();
-}
-function pickForm(v){if(!selIng)return;var reg=R[cur];var rid=resolve(reg,selIng);
-  if(!reg.avail[rid]||!reg.avail[rid][v])return;selForm=selForm===v?null:v;render();}
+  var reg=R[cur];var rid=resolveIng(reg,selIng);var rfd=selForm?resolveForm(reg,selForm):null;
+  if(selIng&&selForm&&(!reg.avail[rid]||!reg.avail[rid][rfd]))selForm=null;
+  render();}
+function pickForm(v){if(!selIng)return;var reg=R[cur];var rid=resolveIng(reg,selIng);var rfd=resolveForm(reg,v);
+  if(!reg.avail[rid]||!reg.avail[rid][rfd])return;selForm=selForm===v?null:v;render();}
 
 function render(){
-  var reg=R[cur];var rid=selIng?resolve(reg,selIng):null;
+  var reg=R[cur];var rid=selIng?resolveIng(reg,selIng):null;
   document.querySelectorAll('#col-ing .pill').forEach(function(p){p.classList.toggle('active-ing',p.dataset.ing===selIng);});
   document.querySelectorAll('#col-form .pill').forEach(function(p){
-    var fm=p.dataset.form;var ok=rid?reg.avail[rid]&&reg.avail[rid][fm]:true;
+    var fm=p.dataset.form;var rfm=resolveForm(reg,fm);
+    var ok=rid?reg.avail[rid]&&reg.avail[rid][rfm]:true;
     p.classList.toggle('active-form',fm===selForm);p.classList.toggle('disabled',!selIng||!ok);
   });
   document.querySelectorAll('.form-note').forEach(function(n){n.remove();});
   if(rid&&reg.notes&&reg.notes[rid]){Object.keys(reg.notes[rid]).forEach(function(fm){
-    var pill=document.querySelector('#col-form [data-form="'+fm+'"]');
-    if(pill){var n=document.createElement('div');n.className='form-note';n.textContent=reg.notes[rid][fm];pill.parentNode.insertBefore(n,pill.nextSibling);}
+    document.querySelectorAll('#col-form .pill').forEach(function(pill){
+      var pfm=pill.dataset.form;var rpfm=resolveForm(reg,pfm);
+      if(rpfm===fm){var n=document.createElement('div');n.className='form-note';n.textContent=reg.notes[rid][fm];pill.parentNode.insertBefore(n,pill.nextSibling);}
+    });
   });}
   var ph=document.getElementById('placeholder'),res=document.getElementById('results');
   if(!selIng){ph.style.display='block';ph.textContent='Select an ingredient to start';res.style.display='none';return;}
@@ -266,7 +276,8 @@ function render(){
 
   var ing=reg.ingredients.find(function(i){return i.id===selIng;});
   var fd=reg.forms.find(function(x){return x.id===selForm;});
-  var f=FM[selForm];
+  var rfd=resolveForm(reg,selForm);
+  var f=FM[selForm]||FM[rfd];
   var interval=reg.intervals[rid];
   var isOther=selIng==='other';
   var iClass=interval.includes('optional')?'tag-coral':'tag-amber';
@@ -292,16 +303,17 @@ function render(){
 
   var unitHtml=f.type==='other'?'<span class="tag tag-coral">free text</span>':'<span class="tag tag-gray">'+f.unit+'</span>';
 
-  var brandLine=ing.sub||'';
+  var allBrands=[];
+  if(ing.sub)ing.sub.split(', ').forEach(function(b){allBrands.push(b);});
   var akaIng=reg.ingredients.find(function(i){return i.maps===rid&&i.id!==selIng;});
-  if(!akaIng&&ing.maps){akaIng=reg.ingredients.find(function(i){return i.id===ing.maps;});}
+  if(!akaIng&&ing.maps)akaIng=reg.ingredients.find(function(i){return i.id===ing.maps;});
+  if(akaIng&&akaIng.sub)akaIng.sub.split(', ').forEach(function(b){if(allBrands.indexOf(b)===-1)allBrands.push(b);});
 
   var brandsHtml='';
-  if(brandLine){
+  if(allBrands.length){
     brandsHtml='<div class="result-card"><div class="result-label">Common brands</div><div class="result-val">'+
-    brandLine.split(', ').map(function(b){return '<span class="tag tag-purple">'+b+'</span>';}).join('');
-    if(akaIng&&akaIng.sub){brandsHtml+=akaIng.sub.split(', ').map(function(b){return '<span class="tag tag-purple">'+b+'</span>';}).join('');}
-    if(ing.where){brandsHtml+='<div class="where">Where: '+ing.where+'</div>';}
+    allBrands.map(function(b){return '<span class="tag tag-purple">'+b+'</span>';}).join('');
+    if(ing.where)brandsHtml+='<div class="where">Where: '+ing.where+'</div>';
     brandsHtml+='</div></div>';
   }
 
