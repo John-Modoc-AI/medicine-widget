@@ -40,6 +40,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .where{font-size:11px;color:#999;margin-top:4px;line-height:1.4}
 h1{font-size:18px;font-weight:500;margin-bottom:4px}
 .subtitle{font-size:13px;color:#888;margin-bottom:20px}
+.search-wrap{position:relative}
+.search-input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;background:#fff;color:#1a1a1a}
+.search-input:focus{outline:none;border-color:#534AB7}
+.search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;max-height:200px;overflow-y:auto;z-index:10;display:none}
+.search-results.open{display:block}
+.search-item{padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
+.search-item:hover{background:#f5f5f5}
+.search-item:last-child{border-bottom:none}
+.search-item .si-name{font-weight:500}
+.search-item .si-detail{font-size:11px;color:#888;margin-top:2px}
+.selected-brand{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#EEEDFE;border-radius:6px;font-size:13px;color:#3C3489}
+.selected-brand .clear-btn{cursor:pointer;font-size:16px;color:#999;margin-left:auto;line-height:1}
+.selected-brand .clear-btn:hover{color:#666}
+.filled-val{font-weight:500;color:#1a1a1a}
+.autofill-note{font-size:11px;color:#534AB7;margin-top:4px}
 @media(prefers-color-scheme:dark){
 .pill{background:#2a2a2a;color:#e5e5e5;border-color:#444}
 .pill:hover{border-color:#666}
@@ -59,17 +74,27 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 .tag-teal{background:#085041;color:#9FE1CB}
 .tag-purple{background:#3C3489;color:#CECBF6}
 .tag-blue{background:#0C447C;color:#B5D4F4}
+.search-input{background:#333;color:#e5e5e5;border-color:#555}
+.search-input:focus{border-color:#AFA9EC}
+.search-results{background:#2a2a2a;border-color:#555}
+.search-item{border-bottom-color:#444}
+.search-item:hover{background:#333}
+.search-item .si-detail{color:#888}
+.selected-brand{background:#3C3489;color:#CECBF6}
+.filled-val{color:#e5e5e5}
+.autofill-note{color:#AFA9EC}
 }
 </style>
 </head>
 <body>
 <h1>Add medicine — variable explorer</h1>
-<p class="subtitle">Select a region, then an ingredient and form to see how concentration, dose unit, and re-dose interval are determined.</p>
+<p class="subtitle">Select a region, ingredient, and form. Then search for your brand to auto-fill concentration and details.</p>
 <div class="region-tabs">
   <div class="region-tab" data-region="global" onclick="pickRegion('global')">Global</div>
   <div class="region-tab active" data-region="us" onclick="pickRegion('us')">US</div>
   <div class="region-tab" data-region="india" onclick="pickRegion('india')">India</div>
-  <div class="region-tab" data-region="latam" onclick="pickRegion('latam')">South America</div>
+  <div class="region-tab" data-region="brazil" onclick="pickRegion('brazil')">Brazil</div>
+  <div class="region-tab" data-region="venezuela" onclick="pickRegion('venezuela')">Venezuela</div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 12px 1fr 12px 1fr;gap:0;align-items:start">
 <div class="col" id="col-ing"></div>
@@ -83,6 +108,89 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 </div>
 </div>
 <script>
+var BRANDS=[
+{n:'Tylenol Infants\' Oral Suspension',ing:'aceta',forms:['suspension'],mg:160,ml:5,unit:'mL',interval:'4 hours',regions:['us','global']},
+{n:'Tylenol Children\'s Oral Suspension',ing:'aceta',forms:['suspension'],mg:160,ml:5,unit:'mL',interval:'4 hours',regions:['us','global']},
+{n:'Tylenol Children\'s Chewables',ing:'aceta',forms:['chewable'],mg:160,ml:null,unit:'tablets',interval:'4 hours',regions:['us','global']},
+{n:'Tylenol Dissolve Packs',ing:'aceta',forms:['dissolve_pack','sachet'],mg:160,ml:null,unit:'packs',interval:'4 hours',regions:['us','global']},
+{n:'FeverAll Infants\' Suppository (80mg)',ing:'aceta',forms:['suppository'],mg:80,ml:null,unit:'units',interval:'4 hours',regions:['us','global']},
+{n:'FeverAll Children\'s Suppository (120mg)',ing:'aceta',forms:['suppository'],mg:120,ml:null,unit:'units',interval:'4 hours',regions:['us','global']},
+{n:'FeverAll Jr Strength Suppository (325mg)',ing:'aceta',forms:['suppository'],mg:325,ml:null,unit:'units',interval:'4 hours',regions:['us','global']},
+{n:'Motrin Infants\' Drops',ing:'ibu',forms:['drops'],mg:50,ml:1.25,unit:'mL',interval:'6-8 hours',regions:['us','global']},
+{n:'Motrin Children\'s Suspension',ing:'ibu',forms:['suspension'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['us','global']},
+{n:'Motrin Children\'s Chewables',ing:'ibu',forms:['chewable'],mg:100,ml:null,unit:'tablets',interval:'6-8 hours',regions:['us','global']},
+{n:'Advil Infants\' Drops',ing:'ibu',forms:['drops'],mg:50,ml:1.25,unit:'mL',interval:'6-8 hours',regions:['us','global']},
+{n:'Advil Children\'s Suspension',ing:'ibu',forms:['suspension'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['us','global']},
+{n:'Advil Children\'s Chewables',ing:'ibu',forms:['chewable'],mg:100,ml:null,unit:'tablets',interval:'6-8 hours',regions:['us','global']},
+{n:'Calpol Infant Suspension (UK)',ing:'para',forms:['suspension'],mg:120,ml:5,unit:'mL',interval:'4-6 hours',regions:['global']},
+{n:'Calpol SixPlus Suspension (UK)',ing:'para',forms:['suspension'],mg:250,ml:5,unit:'mL',interval:'4-6 hours',regions:['global']},
+{n:'Calpol SixPlus Fastmelts (UK)',ing:'para',forms:['melt'],mg:250,ml:null,unit:'tablets',interval:'4-6 hours',regions:['global']},
+{n:'Nurofen for Children Suspension (UK)',ing:'ibu',forms:['suspension','syrup'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['global']},
+{n:'Nurofen for Children Baby (UK)',ing:'ibu',forms:['suspension'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['global']},
+{n:'Panadol Children\'s Suspension',ing:'para',forms:['suspension'],mg:120,ml:5,unit:'mL',interval:'4-6 hours',regions:['global']},
+{n:'Panadol Baby Drops',ing:'para',forms:['drops'],mg:100,ml:1,unit:'mL',interval:'4-6 hours',regions:['global']},
+{n:'Alvedon Suppository 125mg',ing:'para',forms:['suppository'],mg:125,ml:null,unit:'units',interval:'4-6 hours',regions:['global']},
+{n:'Alvedon Suppository 250mg',ing:'para',forms:['suppository'],mg:250,ml:null,unit:'units',interval:'4-6 hours',regions:['global']},
+{n:'Crocin 120 Suspension',ing:'para',forms:['suspension'],mg:120,ml:5,unit:'mL',interval:'4-6 hours',regions:['india','global']},
+{n:'Crocin 240 DS Suspension',ing:'para',forms:['suspension'],mg:240,ml:5,unit:'mL',interval:'4-6 hours',regions:['india','global']},
+{n:'Crocin Baby Drops',ing:'para',forms:['drops'],mg:100,ml:1,unit:'mL',interval:'4-6 hours',regions:['india','global']},
+{n:'Crocin DT (Dispersible Tablet)',ing:'para',forms:['dispersible'],mg:125,ml:null,unit:'tablets',interval:'4-6 hours',regions:['india','global']},
+{n:'Calpol Suspension (India)',ing:'para',forms:['suspension'],mg:120,ml:5,unit:'mL',interval:'4-6 hours',regions:['india','global']},
+{n:'Dolo 650 Tablet',ing:'para',forms:['tablet'],mg:650,ml:null,unit:'tablets',interval:'4-6 hours',regions:['india','global']},
+{n:'Dolo DT 125mg',ing:'para',forms:['dispersible'],mg:125,ml:null,unit:'tablets',interval:'4-6 hours',regions:['india','global']},
+{n:'Dolo DT 250mg',ing:'para',forms:['dispersible'],mg:250,ml:null,unit:'tablets',interval:'4-6 hours',regions:['india','global']},
+{n:'Brufen Suspension',ing:'ibu',forms:['suspension','syrup'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['india','global']},
+{n:'Ibugesic Plus Suspension',ing:'ibu',forms:['suspension','syrup'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['india','global']},
+{n:'Ibugesic Drops',ing:'ibu',forms:['drops'],mg:40,ml:1,unit:'mL',interval:'6-8 hours',regions:['india','global']},
+{n:'Meftal-P Suspension',ing:'mef',forms:['suspension','syrup'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['india','global']},
+{n:'Meftal-P Tablet',ing:'mef',forms:['tablet'],mg:250,ml:null,unit:'tablets',interval:'6-8 hours',regions:['india','global']},
+{n:'Novalgina Gotas',ing:'dipy',forms:['drops'],mg:500,ml:1,unit:'mL',interval:'6 hours',regions:['brazil','venezuela','global']},
+{n:'Novalgina Solução Oral',ing:'dipy',forms:['solution','syrup','suspension'],mg:50,ml:1,unit:'mL',interval:'6 hours',regions:['brazil','global']},
+{n:'Novalgina Supositório 300mg',ing:'dipy',forms:['suppository'],mg:300,ml:null,unit:'units',interval:'6 hours',regions:['brazil','venezuela','global']},
+{n:'Novalgina Comprimido 500mg',ing:'dipy',forms:['tablet'],mg:500,ml:null,unit:'tablets',interval:'6 hours',regions:['brazil','venezuela','global']},
+{n:'Anador Gotas',ing:'dipy',forms:['drops'],mg:500,ml:1,unit:'mL',interval:'6 hours',regions:['brazil','global']},
+{n:'Tylenol Bebê Gotas',ing:'para',forms:['drops'],mg:200,ml:1,unit:'mL',interval:'4-6 hours',regions:['brazil','global']},
+{n:'Tylenol Criança Suspensão',ing:'para',forms:['suspension','solution','syrup'],mg:160,ml:5,unit:'mL',interval:'4-6 hours',regions:['brazil','global']},
+{n:'Alivium Gotas (50mg/mL)',ing:'ibu',forms:['drops'],mg:50,ml:1,unit:'mL',interval:'6-8 hours',regions:['brazil','global']},
+{n:'Alivium Gotas (100mg/mL)',ing:'ibu',forms:['drops'],mg:100,ml:1,unit:'mL',interval:'6-8 hours',regions:['brazil','global']},
+{n:'Advil Infantil Suspensão',ing:'ibu',forms:['suspension','solution','syrup'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['brazil','global']},
+{n:'Panadol Gotas',ing:'para',forms:['drops'],mg:100,ml:1,unit:'mL',interval:'4-6 hours',regions:['brazil','venezuela','global']},
+{n:'Atamel Jarabe Pediátrico',ing:'aceta',forms:['syrup'],mg:120,ml:5,unit:'mL',interval:'4-6 hours',regions:['venezuela','global']},
+{n:'Atamel Gotas Pediátricas',ing:'aceta',forms:['drops'],mg:100,ml:1,unit:'mL',interval:'4-6 hours',regions:['venezuela','global']},
+{n:'Atamel Forte Comprimido',ing:'aceta',forms:['tablet'],mg:500,ml:null,unit:'tablets',interval:'4-6 hours',regions:['venezuela','global']},
+{n:'Analper Pediátrico Jarabe (150mg/5mL)',ing:'aceta',forms:['syrup'],mg:150,ml:5,unit:'mL',interval:'4-6 hours',regions:['venezuela','global']},
+{n:'Neo-Melubrina Jarabe Infantil',ing:'meta',forms:['syrup'],mg:250,ml:5,unit:'mL',interval:'6 hours',regions:['venezuela','global']},
+{n:'Neo-Melubrina Gotas',ing:'meta',forms:['drops'],mg:500,ml:1,unit:'mL',interval:'6 hours',regions:['venezuela','global']},
+{n:'Neo-Melubrina Supositorio 300mg',ing:'meta',forms:['suppository'],mg:300,ml:null,unit:'units',interval:'6 hours',regions:['venezuela','global']},
+{n:'Prodolina Gotas',ing:'meta',forms:['drops'],mg:500,ml:1,unit:'mL',interval:'6 hours',regions:['venezuela','global']},
+{n:'Advil Pediátrico Suspensión',ing:'ibu',forms:['syrup','suspension'],mg:100,ml:5,unit:'mL',interval:'6-8 hours',regions:['venezuela','global']},
+{n:'Motrin Infantil Gotas',ing:'ibu',forms:['drops'],mg:50,ml:1.25,unit:'mL',interval:'6-8 hours',regions:['venezuela','global']},
+{n:'Tylenol Gotas Pediátricas',ing:'aceta',forms:['drops'],mg:100,ml:1,unit:'mL',interval:'4-6 hours',regions:['venezuela','global']},
+{n:'Kids Bufferin CII (Japan)',ing:'para',forms:['chewable'],mg:50,ml:null,unit:'tablets',interval:'4-6 hours',regions:['global']},
+{n:'Kids Bufferin Syrup Netsu (Japan)',ing:'para',forms:['syrup','suspension'],mg:100,ml:5,unit:'mL',interval:'4-6 hours',regions:['global']},
+{n:'Muhi Kodomo Powder (Japan)',ing:'para',forms:['powder','granules'],mg:150,ml:null,unit:'sachets',interval:'4-6 hours',regions:['global']},
+{n:'Pabron Kids Suppository (Japan)',ing:'para',forms:['suppository'],mg:100,ml:null,unit:'units',interval:'4-6 hours',regions:['global']},
+{n:'Voltaren Drops (Diclofenac)',ing:'diclo',forms:['drops'],mg:15,ml:1,unit:'mL',interval:'8 hours',regions:['global']},
+{n:'Voltaren Suppository 12.5mg',ing:'diclo',forms:['suppository'],mg:12.5,ml:null,unit:'units',interval:'8 hours',regions:['global']},
+{n:'Voltaren Suppository 25mg',ing:'diclo',forms:['suppository'],mg:25,ml:null,unit:'units',interval:'8 hours',regions:['global']},
+{n:'Cataflam Dispersible Tablet 25mg',ing:'diclo',forms:['dispersible'],mg:25,ml:null,unit:'tablets',interval:'8 hours',regions:['global']},
+{n:'Ponstan Suspension',ing:'mef',forms:['suspension','syrup'],mg:50,ml:5,unit:'mL',interval:'6-8 hours',regions:['global']},
+{n:'Tylenol Infants\' Concentrated Drops',ing:'aceta',forms:['drops'],mg:160,ml:5,unit:'mL',interval:'4 hours',regions:['us']},
+{n:'Calpol Suppository 125mg (India)',ing:'para',forms:['suppository'],mg:125,ml:null,unit:'units',interval:'4-6 hours',regions:['india','global']},
+{n:'Brufen 400mg Tablet',ing:'ibu',forms:['tablet'],mg:400,ml:null,unit:'tablets',interval:'6-8 hours',regions:['india','global']},
+{n:'Tylenol 500mg Comprimido',ing:'para',forms:['tablet'],mg:500,ml:null,unit:'tablets',interval:'4-6 hours',regions:['brazil']},
+{n:'Paracetamol Supositório 250mg',ing:'para',forms:['suppository'],mg:250,ml:null,unit:'units',interval:'4-6 hours',regions:['brazil']},
+{n:'Advil 200mg Comprimido',ing:'ibu',forms:['tablet'],mg:200,ml:null,unit:'tablets',interval:'6-8 hours',regions:['brazil','venezuela']},
+{n:'Atamel Supositorio 125mg',ing:'aceta',forms:['suppository'],mg:125,ml:null,unit:'units',interval:'4-6 hours',regions:['venezuela','global']},
+{n:'Novalgina Jarabe',ing:'dipy',forms:['syrup'],mg:50,ml:1,unit:'mL',interval:'6 hours',regions:['venezuela']},
+{n:'Neo-Melubrina Comprimido 500mg',ing:'meta',forms:['tablet'],mg:500,ml:null,unit:'tablets',interval:'6 hours',regions:['venezuela','global']},
+{n:'Panadol Soluble Effervescent 500mg',ing:'para',forms:['effervescent'],mg:500,ml:null,unit:'tablets',interval:'4-6 hours',regions:['global']},
+{n:'Ibuprofen 200mg Tablet (generic)',ing:'ibu',forms:['tablet'],mg:200,ml:null,unit:'tablets',interval:'6-8 hours',regions:['global']},
+{n:'Meftal DT 50mg (Dispersible)',ing:'mef',forms:['dispersible'],mg:50,ml:null,unit:'tablets',interval:'6-8 hours',regions:['global']},
+{n:'Voltaren Sachets 50mg',ing:'diclo',forms:['powder'],mg:50,ml:null,unit:'sachets',interval:'8 hours',regions:['global']},
+{n:'Voltaren 25mg Tablet',ing:'diclo',forms:['tablet'],mg:25,ml:null,unit:'tablets',interval:'8 hours',regions:['global']}
+];
+
 var FM={
   suspension:{type:'liquid',unit:'mL',ul:'mL',exMg:'120',exVol:'5'},
   syrup:{type:'liquid',unit:'mL',ul:'mL',exMg:'120',exVol:'5'},
@@ -104,44 +212,32 @@ var FM={
 var R={
 global:{
   ingredients:[
-    {id:'para',label:'Paracetamol',sub:'Calpol, Crocin, Dolo, Panadol, Calonal',where:'Europe, Asia, Africa, Latin America, Australia'},
-    {id:'aceta',label:'Acetaminophen',sub:'Tylenol, FeverAll',where:'US, Canada, Japan',maps:'para'},
-    {id:'ibu',label:'Ibuprofen',sub:'Motrin, Advil, Nurofen, Brufen, Calprofen',where:'Worldwide'},
-    {id:'dipy',label:'Dipyrone',sub:'Novalgina, Anador',where:'Brazil, Latin America, Israel'},
-    {id:'meta',label:'Metamizol',sub:'Novalgin, Analgin',where:'Germany, Italy, Russia, parts of Asia',maps:'dipy'},
-    {id:'mef',label:'Mefenamic acid',sub:'Meftal-P, Ponstan',where:'India, SE Asia, Middle East, parts of Africa'},
-    {id:'diclo',label:'Diclofenac',sub:'Voltaren, Cataflam',where:'Parts of Europe, Middle East, Africa, Asia (prescribed)'},
-    {id:'other',label:'Other (free text)',sub:null,where:null}
+    {id:'para',label:'Paracetamol',sub:'Calpol, Crocin, Dolo, Panadol, Calonal'},
+    {id:'aceta',label:'Acetaminophen',sub:'Tylenol, FeverAll',maps:'para'},
+    {id:'ibu',label:'Ibuprofen',sub:'Motrin, Advil, Nurofen, Brufen, Calprofen'},
+    {id:'dipy',label:'Dipyrone',sub:'Novalgina, Anador'},
+    {id:'meta',label:'Metamizol',sub:'Novalgin, Analgin',maps:'dipy'},
+    {id:'mef',label:'Mefenamic acid',sub:'Meftal-P, Ponstan'},
+    {id:'diclo',label:'Diclofenac',sub:'Voltaren, Cataflam'},
+    {id:'other',label:'Other (free text)',sub:null}
   ],
   forms:[
-    {id:'suspension',label:'Oral suspension',sub:'Tylenol, Motrin, Calpol, Nurofen',w:'Worldwide — most common pediatric form'},
-    {id:'syrup',label:'Syrup',sub:'Crocin, Brufen, Novalgina, Meftal-P',w:'India, Japan, Latin America, parts of Europe',maps:'suspension'},
-    {id:'drops',label:'Drops',sub:'Motrin Infant, Advil Infant, Crocin, Novalgina Gotas',w:'Worldwide for infants — higher concentration, smaller volume'},
-    {id:'chewable',label:'Chewable tablet',sub:'Tylenol Chewables, Motrin Chewables, Nurofen',w:'US, UK, parts of Europe and Asia'},
-    {id:'dispersible',label:'Dispersible tablet',sub:'Dolo DT, Crocin DT, Calpol Tablets',w:'India, Africa, developing countries — WHO recommended'},
-    {id:'melt',label:'Melt-in-mouth tablet',sub:'Calpol Fastmelts',w:'UK, Japan, parts of Europe'},
-    {id:'powder',label:'Powder',sub:'Muhi Kodomo (Japan)',w:'Europe, parts of Asia'},
-    {id:'granules',label:'Granules',sub:'Kids Bufferin (Japan), Pabron Kids',w:'Japan, Germany',maps:'powder'},
-    {id:'sachet',label:'Sachet',sub:'Tylenol Dissolve Packs',w:'US, Europe, Asia',maps:'powder'},
-    {id:'effervescent',label:'Effervescent tablet',sub:'Panadol Soluble, Calpol SixPlus',w:'Europe (Germany, France), parts of Middle East — older children'},
-    {id:'suppository',label:'Suppository',sub:'FeverAll, Pabron Kids, Alvedon',w:'Worldwide — esp. Europe, Japan, Latin America'},
-    {id:'tablet',label:'Tablet',sub:'Generic — older children',w:'Older children — worldwide'},
-    {id:'other',label:'Other (free text)',sub:null,w:null}
+    {id:'suspension',label:'Oral suspension',sub:'Tylenol, Motrin, Calpol'},
+    {id:'syrup',label:'Syrup',sub:'Crocin, Brufen, Meftal-P',maps:'suspension'},
+    {id:'drops',label:'Drops',sub:'Motrin Infant, Crocin, Novalgina'},
+    {id:'chewable',label:'Chewable tablet',sub:'Tylenol, Motrin'},
+    {id:'dispersible',label:'Dispersible tablet',sub:'Dolo DT, Crocin DT'},
+    {id:'melt',label:'Melt-in-mouth tablet',sub:'Calpol Fastmelts'},
+    {id:'powder',label:'Powder',sub:'Muhi Kodomo (Japan)'},
+    {id:'granules',label:'Granules',sub:'Kids Bufferin, Pabron',maps:'powder'},
+    {id:'sachet',label:'Sachet',sub:'Tylenol Dissolve Packs',maps:'powder'},
+    {id:'effervescent',label:'Effervescent tablet',sub:'Panadol Soluble'},
+    {id:'suppository',label:'Suppository',sub:'FeverAll, Pabron, Alvedon'},
+    {id:'tablet',label:'Tablet',sub:'Dolo 650, generic'},
+    {id:'other',label:'Other (free text)',sub:null}
   ],
-  avail:{
-    para:{suspension:1,drops:1,chewable:1,dispersible:1,melt:1,powder:1,effervescent:1,suppository:1,tablet:1,other:1},
-    ibu:{suspension:1,drops:1,chewable:1,dispersible:0,melt:0,powder:0,effervescent:0,suppository:0,tablet:1,other:1},
-    dipy:{suspension:1,drops:1,chewable:0,dispersible:0,melt:0,powder:0,effervescent:0,suppository:1,tablet:1,other:1},
-    mef:{suspension:1,drops:0,chewable:0,dispersible:1,melt:0,powder:0,effervescent:0,suppository:0,tablet:1,other:1},
-    diclo:{suspension:0,drops:1,chewable:0,dispersible:1,melt:0,powder:1,effervescent:0,suppository:1,tablet:1,other:1},
-    other:{suspension:1,drops:1,chewable:1,dispersible:1,melt:1,powder:1,effervescent:1,suppository:1,tablet:1,other:1}
-  },
-  notes:{
-    ibu:{dispersible:'Not commonly available',melt:'Not commonly available',powder:'Not commonly available',effervescent:'Not commonly available',suppository:'Limited availability globally'},
-    dipy:{chewable:'Not available',dispersible:'Not available',melt:'Not available',powder:'Not available',effervescent:'Not available'},
-    mef:{drops:'Not commonly available',chewable:'Not available',melt:'Not available',powder:'Not available',effervescent:'Not available',suppository:'Not available'},
-    diclo:{suspension:'Not commonly available for children',chewable:'Not available',melt:'Not available',effervescent:'Not available'}
-  },
+  avail:{para:{suspension:1,drops:1,chewable:1,dispersible:1,melt:1,powder:1,effervescent:1,suppository:1,tablet:1,other:1},ibu:{suspension:1,drops:1,chewable:1,dispersible:0,melt:0,powder:0,effervescent:0,suppository:0,tablet:1,other:1},dipy:{suspension:1,drops:1,chewable:0,dispersible:0,melt:0,powder:0,effervescent:0,suppository:1,tablet:1,other:1},mef:{suspension:1,drops:0,chewable:0,dispersible:1,melt:0,powder:0,effervescent:0,suppository:0,tablet:1,other:1},diclo:{suspension:0,drops:1,chewable:0,dispersible:1,melt:0,powder:1,effervescent:0,suppository:1,tablet:1,other:1},other:{suspension:1,drops:1,chewable:1,dispersible:1,melt:1,powder:1,effervescent:1,suppository:1,tablet:1,other:1}},
+  notes:{ibu:{dispersible:'Not commonly available',melt:'Not commonly available',powder:'Not commonly available',effervescent:'Not commonly available',suppository:'Limited availability'},dipy:{chewable:'Not available',dispersible:'Not available',melt:'Not available',powder:'Not available',effervescent:'Not available'},mef:{drops:'Not commonly available',chewable:'Not available',melt:'Not available',powder:'Not available',effervescent:'Not available',suppository:'Not available'},diclo:{suspension:'Not commonly available for children',chewable:'Not available',melt:'Not available',effervescent:'Not available'}},
   intervals:{para:'4-6 hours',ibu:'6-8 hours',dipy:'6 hours',mef:'6-8 hours',diclo:'8 hours',other:'optional (manual)'}
 },
 us:{
@@ -152,17 +248,13 @@ us:{
   ],
   forms:[
     {id:'suspension',label:'Oral suspension',sub:'Tylenol, Motrin, Advil'},
-    {id:'drops',label:'Drops',sub:'Motrin Infant Drops, Advil Infant Drops'},
-    {id:'chewable',label:'Chewable tablet',sub:'Tylenol Chewables, Motrin Chewables'},
+    {id:'drops',label:'Drops',sub:'Motrin Infant, Advil Infant'},
+    {id:'chewable',label:'Chewable tablet',sub:'Tylenol, Motrin'},
     {id:'dissolve_pack',label:'Dissolve pack',sub:'Tylenol Dissolve Packs'},
     {id:'suppository',label:'Suppository',sub:'FeverAll'},
     {id:'other',label:'Other (free text)',sub:null}
   ],
-  avail:{
-    aceta:{suspension:1,drops:1,chewable:1,dissolve_pack:1,suppository:1,other:1},
-    ibu:{suspension:1,drops:1,chewable:1,dissolve_pack:0,suppository:0,other:1},
-    other:{suspension:1,drops:1,chewable:1,dissolve_pack:1,suppository:1,other:1}
-  },
+  avail:{aceta:{suspension:1,drops:1,chewable:1,dissolve_pack:1,suppository:1,other:1},ibu:{suspension:1,drops:1,chewable:1,dissolve_pack:0,suppository:0,other:1},other:{suspension:1,drops:1,chewable:1,dissolve_pack:1,suppository:1,other:1}},
   notes:{ibu:{dissolve_pack:'Not commonly available for ibuprofen in the US',suppository:'Not available for ibuprofen in the US'}},
   intervals:{aceta:'4 hours',ibu:'6-8 hours',other:'optional (manual)'}
 },
@@ -174,58 +266,80 @@ india:{
     {id:'other',label:'Other (free text)',sub:null}
   ],
   forms:[
-    {id:'suspension',label:'Oral suspension',sub:'Calpol Suspension, Nurofen'},
-    {id:'syrup',label:'Syrup',sub:'Crocin Syrup, Brufen Syrup, Meftal-P',maps:'suspension'},
+    {id:'suspension',label:'Oral suspension',sub:'Calpol, Nurofen'},
+    {id:'syrup',label:'Syrup',sub:'Crocin, Brufen, Meftal-P',maps:'suspension'},
     {id:'drops',label:'Drops',sub:'Crocin Drops, Ibugesic Drops'},
     {id:'dispersible',label:'Dispersible tablet',sub:'Dolo DT, Crocin DT'},
-    {id:'tablet',label:'Tablet',sub:'Dolo 650, Crocin 500'},
+    {id:'tablet',label:'Tablet',sub:'Dolo 650'},
     {id:'suppository',label:'Suppository',sub:'Calpol Suppository'},
     {id:'other',label:'Other (free text)',sub:null}
   ],
-  avail:{
-    para:{suspension:1,drops:1,dispersible:1,tablet:1,suppository:1,other:1},
-    ibu:{suspension:1,drops:1,dispersible:0,tablet:1,suppository:0,other:1},
-    mef:{suspension:1,drops:0,dispersible:0,tablet:1,suppository:0,other:1},
-    other:{suspension:1,drops:1,dispersible:1,tablet:1,suppository:1,other:1}
-  },
-  notes:{
-    ibu:{dispersible:'Not commonly available',suppository:'Not available in India'},
-    mef:{drops:'Not commonly available',dispersible:'Not commonly available',suppository:'Not available'}
-  },
+  avail:{para:{suspension:1,drops:1,dispersible:1,tablet:1,suppository:1,other:1},ibu:{suspension:1,drops:1,dispersible:0,tablet:1,suppository:0,other:1},mef:{suspension:1,drops:0,dispersible:0,tablet:1,suppository:0,other:1},other:{suspension:1,drops:1,dispersible:1,tablet:1,suppository:1,other:1}},
+  notes:{ibu:{dispersible:'Not commonly available',suppository:'Not available in India'},mef:{drops:'Not commonly available',dispersible:'Not commonly available',suppository:'Not available'}},
   intervals:{para:'4-6 hours',ibu:'6-8 hours',mef:'6-8 hours',other:'optional (manual)'}
 },
-latam:{
+brazil:{
   ingredients:[
-    {id:'dipy',label:'Dipyrone',sub:'Novalgina, Anador'},
-    {id:'meta',label:'Metamizol',sub:'Novalgin',maps:'dipy'},
+    {id:'dipy',label:'Dipirona',sub:'Novalgina, Anador'},
     {id:'para',label:'Paracetamol',sub:'Tylenol, Panadol'},
-    {id:'ibu',label:'Ibuprofen',sub:'Advil, Alivium'},
+    {id:'ibu',label:'Ibuprofeno',sub:'Advil, Alivium'},
     {id:'other',label:'Other (free text)',sub:null}
   ],
   forms:[
-    {id:'solution',label:'Oral solution',sub:'Novalgina Solução'},
-    {id:'syrup',label:'Syrup',sub:'Tylenol Jarabe, Alivium Xarope',maps:'solution'},
-    {id:'drops',label:'Drops (gotas)',sub:'Novalgina Gotas, Tylenol Gotas, Alivium Gotas'},
-    {id:'tablet',label:'Tablet (comprimido)',sub:'Novalgina, Tylenol, Advil'},
-    {id:'suppository',label:'Suppository (supositorio)',sub:'Novalgina Supositório'},
+    {id:'solution',label:'Solução oral'},
+    {id:'syrup',label:'Xarope',sub:'Tylenol Xarope, Alivium Xarope',maps:'solution'},
+    {id:'drops',label:'Gotas',sub:'Novalgina Gotas, Tylenol Gotas, Alivium Gotas'},
+    {id:'tablet',label:'Comprimido',sub:'Novalgina, Tylenol'},
+    {id:'suppository',label:'Supositório',sub:'Novalgina Supositório'},
     {id:'other',label:'Other (free text)',sub:null}
   ],
-  avail:{
-    dipy:{solution:1,drops:1,tablet:1,suppository:1,other:1},
-    para:{solution:1,drops:1,tablet:1,suppository:1,other:1},
-    ibu:{solution:1,drops:1,tablet:1,suppository:0,other:1},
-    other:{solution:1,drops:1,tablet:1,suppository:1,other:1}
-  },
-  notes:{ibu:{suppository:'Not commonly available in South America'}},
+  avail:{dipy:{solution:1,drops:1,tablet:1,suppository:1,other:1},para:{solution:1,drops:1,tablet:1,suppository:1,other:1},ibu:{solution:1,drops:1,tablet:1,suppository:0,other:1},other:{solution:1,drops:1,tablet:1,suppository:1,other:1}},
+  notes:{ibu:{suppository:'Not commonly available in Brazil'}},
   intervals:{dipy:'6 hours',para:'4-6 hours',ibu:'6-8 hours',other:'optional (manual)'}
+},
+venezuela:{
+  ingredients:[
+    {id:'aceta',label:'Acetaminofén',sub:'Atamel, Analper, Tylenol'},
+    {id:'meta',label:'Metamizol',sub:'Neo-Melubrina, Prodolina, Farlin',maps:'dipy'},
+    {id:'dipy',label:'Dipirona',sub:'Novalgina',maps:'dipy'},
+    {id:'ibu',label:'Ibuprofeno',sub:'Advil, Motrin'},
+    {id:'other',label:'Other (free text)',sub:null}
+  ],
+  forms:[
+    {id:'syrup',label:'Jarabe',sub:'Atamel Jarabe, Analper Jarabe'},
+    {id:'drops',label:'Gotas',sub:'Atamel Gotas, Neo-Melubrina Gotas'},
+    {id:'tablet',label:'Comprimido',sub:'Atamel Forte, Novalgina'},
+    {id:'suppository',label:'Supositorio',sub:'Neo-Melubrina Supositorio'},
+    {id:'other',label:'Other (free text)',sub:null}
+  ],
+  avail:{aceta:{syrup:1,drops:1,tablet:1,suppository:1,other:1},dipy:{syrup:1,drops:1,tablet:1,suppository:1,other:1},ibu:{syrup:1,drops:1,tablet:1,suppository:0,other:1},other:{syrup:1,drops:1,tablet:1,suppository:1,other:1}},
+  notes:{ibu:{suppository:'Not commonly available in Venezuela'}},
+  intervals:{aceta:'4-6 hours',dipy:'6 hours',ibu:'6-8 hours',other:'optional (manual)'}
 }
 };
 
-var cur='us',selIng=null,selForm=null;
+var cur='us',selIng=null,selForm=null,selBrand=null;
 function resolveIng(reg,id){var i=reg.ingredients.find(function(x){return x.id===id;});return(i&&i.maps)?i.maps:id;}
 function resolveForm(reg,id){var f=reg.forms.find(function(x){return x.id===id;});return(f&&f.maps)?f.maps:id;}
 
-function pickRegion(r){cur=r;selIng=null;selForm=null;
+function canonIng(id){if(id==='aceta')return'para';if(id==='meta')return'dipy';return id;}
+
+function getMatchingBrands(){
+  if(!selIng||!selForm)return[];
+  var reg=R[cur];var rid=canonIng(resolveIng(reg,selIng));
+  return BRANDS.filter(function(b){
+    if(b.regions.indexOf(cur)===-1)return false;
+    var bIng=canonIng(b.ing);
+    if(bIng!==rid)return false;
+    if(b.forms.indexOf(selForm)===-1){
+      var rfd=resolveForm(reg,selForm);
+      if(b.forms.indexOf(rfd)===-1)return false;
+    }
+    return true;
+  });
+}
+
+function pickRegion(r){cur=r;selIng=null;selForm=null;selBrand=null;
   document.querySelectorAll('.region-tab').forEach(function(t){t.classList.toggle('active',t.dataset.region===r);});
   build();render();}
 
@@ -247,12 +361,18 @@ function build(){
   document.getElementById('col-form').innerHTML=fh;
 }
 
-function pickIng(v){selIng=selIng===v?null:v;if(!selIng)selForm=null;
+function pickIng(v){selIng=selIng===v?null:v;if(!selIng)selForm=null;selBrand=null;
   var reg=R[cur];var rid=resolveIng(reg,selIng);var rfd=selForm?resolveForm(reg,selForm):null;
   if(selIng&&selForm&&(!reg.avail[rid]||!reg.avail[rid][rfd]))selForm=null;
   render();}
 function pickForm(v){if(!selIng)return;var reg=R[cur];var rid=resolveIng(reg,selIng);var rfd=resolveForm(reg,v);
-  if(!reg.avail[rid]||!reg.avail[rid][rfd])return;selForm=selForm===v?null:v;render();}
+  if(!reg.avail[rid]||!reg.avail[rid][rfd])return;selForm=selForm===v?null:v;selBrand=null;render();}
+
+function selectBrand(idx){
+  selBrand=getMatchingBrands()[idx];
+  render();
+}
+function clearBrand(){selBrand=null;render();}
 
 function render(){
   var reg=R[cur];var rid=selIng?resolveIng(reg,selIng):null;
@@ -274,58 +394,83 @@ function render(){
   if(!selForm){ph.style.display='block';ph.textContent='Now pick a form';res.style.display='none';return;}
   ph.style.display='none';res.style.display='flex';
 
-  var ing=reg.ingredients.find(function(i){return i.id===selIng;});
   var fd=reg.forms.find(function(x){return x.id===selForm;});
   var rfd=resolveForm(reg,selForm);
   var f=FM[selForm]||FM[rfd];
   var interval=reg.intervals[rid];
   var isOther=selIng==='other';
   var iClass=interval.includes('optional')?'tag-coral':'tag-amber';
+  var brands=getMatchingBrands();
+
+  var brandHtml='<div class="result-card"><div class="result-label">Search brand to auto-fill</div><div class="result-val">';
+  if(selBrand){
+    brandHtml+='<div class="selected-brand"><span>'+selBrand.n+'</span><span class="clear-btn" onclick="clearBrand()">&#10005;</span></div>';
+    brandHtml+='<div class="autofill-note">Concentration and details auto-filled from this product</div>';
+  }else if(brands.length>0){
+    brandHtml+='<div class="search-wrap"><input class="search-input" type="text" placeholder="Type brand name..." oninput="filterBrands(this)" onfocus="filterBrands(this)" onblur="setTimeout(function(){closeSearch()},200)"><div class="search-results" id="brand-results"></div></div>';
+    brandHtml+='<div class="hint">Or skip to enter concentration manually below</div>';
+  }else{
+    brandHtml+='<span class="hint">No known brands in database — enter concentration manually below</span>';
+  }
+  brandHtml+='</div></div>';
 
   var concHtml='';
-  if(f.type==='liquid'){
+  if(selBrand){
+    if(selBrand.ml){
+      concHtml='<span class="tag tag-teal">mg / mL</span>'+
+        '<div style="margin-top:6px"><span class="filled-val">'+selBrand.mg+'mg / '+selBrand.ml+'mL</span></div>'+
+        '<div class="autofill-note">From '+selBrand.n+'</div>';
+    }else{
+      concHtml='<span class="tag tag-teal">mg / '+f.ul+'</span>'+
+        '<div style="margin-top:6px"><span class="filled-val">'+selBrand.mg+'mg / '+f.ul+'</span></div>'+
+        '<div class="autofill-note">From '+selBrand.n+'</div>';
+    }
+  }else if(f.type==='liquid'){
     concHtml='<span class="tag tag-teal">mg / mL (two fields)</span>'+
     '<div class="conc-row"><input type="number" placeholder="'+f.exMg+'"> <span>mg</span>'+
     '<span style="color:#999;font-size:16px">/</span>'+
     '<input type="number" placeholder="'+(f.exVol||'5')+'"> <span>mL</span></div>'+
-    '<div class="bottle-example">e.g. '+f.exMg+'mg / '+(f.exVol||'5')+'mL</div>'+
-    '<div class="hint">Parent reads both numbers from the bottle</div>';
+    '<div class="hint">Read both numbers from your bottle</div>';
   }else if(f.type==='solid'){
     concHtml='<span class="tag tag-teal">mg / '+f.ul+' (one field)</span>'+
     '<div class="conc-row"><input type="number" placeholder="'+f.exMg+'"> <span>mg / '+f.ul+'</span></div>'+
-    '<div class="bottle-example">e.g. '+f.exMg+'mg</div>'+
     '<div class="hint">One number from the packaging</div>';
   }else{
     concHtml='<span class="tag tag-coral">free text</span>'+
     '<div class="conc-row"><input type="text" placeholder="e.g. 50mg/2mL" style="width:120px"></div>'+
-    '<div class="hint">Parent types whatever is on their label</div>';
+    '<div class="hint">Type whatever is on your label</div>';
   }
 
-  var unitHtml=f.type==='other'?'<span class="tag tag-coral">free text</span>':'<span class="tag tag-gray">'+f.unit+'</span>';
+  var unitVal=selBrand?selBrand.unit:(f.type==='other'?'free text':f.unit);
+  var unitHtml=unitVal==='free text'?'<span class="tag tag-coral">free text</span>':'<span class="tag tag-gray">'+unitVal+'</span>';
+  var intervalVal=selBrand?selBrand.interval:interval;
+  var intervalCls=intervalVal.includes('optional')?'tag-coral':'tag-amber';
 
-  var allBrands=[];
-  if(ing.sub)ing.sub.split(', ').forEach(function(b){allBrands.push(b);});
-  var akaIng=reg.ingredients.find(function(i){return i.maps===rid&&i.id!==selIng;});
-  if(!akaIng&&ing.maps)akaIng=reg.ingredients.find(function(i){return i.id===ing.maps;});
-  if(akaIng&&akaIng.sub)akaIng.sub.split(', ').forEach(function(b){if(allBrands.indexOf(b)===-1)allBrands.push(b);});
-
-  var brandsHtml='';
-  if(allBrands.length){
-    brandsHtml='<div class="result-card"><div class="result-label">Common brands</div><div class="result-val">'+
-    allBrands.map(function(b){return '<span class="tag tag-purple">'+b+'</span>';}).join('');
-    if(ing.where)brandsHtml+='<div class="where">Where: '+ing.where+'</div>';
-    brandsHtml+='</div></div>';
-  }
-
-  var formWhere=fd.w?'<div class="result-card"><div class="result-label">Form availability</div><div class="result-val"><span class="tag tag-blue">'+fd.w+'</span></div></div>':'';
-
-  res.innerHTML=brandsHtml+formWhere+
-    '<div class="result-card"><div class="result-label">Concentration input</div><div class="result-val">'+concHtml+'</div></div>'+
+  res.innerHTML=brandHtml+
+    '<div class="result-card"><div class="result-label">Concentration</div><div class="result-val">'+concHtml+'</div></div>'+
     '<div class="result-card"><div class="result-label">Dose input unit (when logging)</div><div class="result-val">'+unitHtml+'</div></div>'+
-    '<div class="result-card"><div class="result-label">Re-dose interval</div><div class="result-val"><span class="tag '+iClass+'">'+interval+'</span>'+
-    (isOther?'<div class="hint">Hint: check your medicine packaging</div>':'<div class="hint">Pre-filled, parent can override</div>')+
+    '<div class="result-card"><div class="result-label">Re-dose interval</div><div class="result-val"><span class="tag '+intervalCls+'">'+intervalVal+'</span>'+
+    (isOther?'<div class="hint">Check your medicine packaging</div>':'<div class="hint">'+(selBrand?'From '+selBrand.n:'Pre-filled, parent can override')+'</div>')+
     '</div></div>';
 }
+
+function filterBrands(input){
+  var q=input.value.toLowerCase();
+  var brands=getMatchingBrands();
+  var container=document.getElementById('brand-results');
+  if(!container)return;
+  var filtered=brands.filter(function(b){return b.n.toLowerCase().indexOf(q)!==-1;});
+  if(filtered.length===0&&q.length===0)filtered=brands;
+  if(filtered.length===0){container.className='search-results';return;}
+  container.className='search-results open';
+  container.innerHTML=filtered.map(function(b,i){
+    var allIdx=brands.indexOf(b);
+    var detail=b.ml?b.mg+'mg / '+b.ml+'mL':b.mg+'mg / '+FM[b.forms[0]].ul;
+    return '<div class="search-item" onmousedown="selectBrand('+allIdx+')"><div class="si-name">'+b.n+'</div><div class="si-detail">'+detail+'</div></div>';
+  }).join('');
+}
+function closeSearch(){var c=document.getElementById('brand-results');if(c)c.className='search-results';}
+
 build();render();
 </script>
 </body>
